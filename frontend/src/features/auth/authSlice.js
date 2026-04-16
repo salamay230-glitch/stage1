@@ -12,36 +12,36 @@ const initialState = {
   error: null,
 };
 
+function mapAuthErrorToKey(error) {
+  const status = error?.response?.status;
+
+  if (status === 401 || status === 422) {
+    return 'invalidCredentials';
+  }
+
+  if (status && status >= 500) {
+    return 'loginFailed';
+  }
+
+  return 'unexpectedError';
+}
+
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ email, remember = true }, { rejectWithValue }) => {
+  async ({ email, password, remember = true }, { rejectWithValue }) => {
     try {
-      // Prepared for Laravel API: replace fallback with API-only path when backend is ready.
-      let token;
-      let user;
-
-      try {
-        const { data } = await api.post('/login', { email, remember });
-        token = data?.token;
-        user = data?.user;
-      } catch (requestError) {
-        const status = requestError?.response?.status;
-        if (status && status < 500) {
-          throw requestError;
-        }
-      }
+      const { data } = await api.post('/login', { email, password, remember });
+      const token = data?.token;
+      const user = data?.user;
 
       if (!token || !user) {
-        token = `demo-token-${Date.now()}`;
-        user = { name: email.split('@')[0] || 'User', email };
+        return rejectWithValue('unexpectedError');
       }
 
       persistAuth({ token, user, remember });
       return { token, user, remember };
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data?.message || 'Unable to login. Please try again.',
-      );
+      return rejectWithValue(mapAuthErrorToKey(error));
     }
   },
 );
@@ -74,7 +74,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error.message || 'Login failed.';
+        state.error = action.payload || 'unexpectedError';
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.token = null;

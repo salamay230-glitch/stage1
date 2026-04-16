@@ -16,21 +16,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $password = Hash::make('password');
+        $password = Hash::make('password123');
 
         User::query()->updateOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'admin@ocp.ma'],
             [
-                'name' => 'Admin User',
+                'name' => 'Administrateur OCP',
                 'password' => $password,
                 'role' => User::ROLE_ADMIN,
             ],
         );
 
         User::query()->updateOrCreate(
-            ['email' => 'user@example.com'],
+            ['email' => 'collaborateur@ocp.ma'],
             [
-                'name' => 'Collaborateur User',
+                'name' => 'Collaborateur OCP',
                 'password' => $password,
                 'role' => User::ROLE_COLLABORATEUR,
             ],

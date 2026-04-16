@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import HomePage from './pages/HomePage';
+import AdministrationPage from './pages/AdministrationPage';
+import CollaborationPage from './pages/CollaborationPage';
 import LoginPage from './pages/LoginPage';
 import GuestRoute from './routes/GuestRoute';
+import PostLoginRedirect from './routes/PostLoginRedirect';
 import PrivateRoute from './routes/PrivateRoute';
+import RoleGuard from './routes/RoleGuard';
 
 export default function App() {
   return (
@@ -13,7 +16,23 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
         </Route>
         <Route element={<PrivateRoute />}>
-          <Route path="/hello" element={<HomePage />} />
+          <Route path="/hello" element={<PostLoginRedirect />} />
+          <Route
+            path="/administration"
+            element={
+              <RoleGuard allow={['admin']}>
+                <AdministrationPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/collaboration"
+            element={
+              <RoleGuard allow={['collaborateur']}>
+                <CollaborationPage />
+              </RoleGuard>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

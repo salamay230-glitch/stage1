@@ -1,16 +1,23 @@
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../features/auth/authSlice';
 import { useLocale } from '../context/LocaleContext';
 
-export default function HomePage() {
+export default function CollaborationPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useLocale();
+  const user = useSelector((s) => s.auth.user);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#031726] px-6 text-white">
-      <h1 className="text-5xl font-semibold leading-none">{t.hello}</h1>
+      <div className="max-w-lg text-center">
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-400/90">{t.collaborationBadge}</p>
+        <h1 className="mt-3 text-4xl font-semibold leading-tight md:text-5xl">{t.collaborationTitle}</h1>
+        <p className="mt-4 text-base text-white/75">
+          {user?.name} · {user?.email}
+        </p>
+      </div>
       <button
         type="button"
         onClick={() => {

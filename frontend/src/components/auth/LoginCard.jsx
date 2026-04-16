@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser } from '../../features/auth/authSlice';
+import { clearAuthError, loginUser } from '../../features/auth/authSlice';
 import { useLocale } from '../../context/LocaleContext';
+import AuthErrorAlert from './AuthErrorAlert';
 
 const buttonBaseClass =
   'flex h-[50px] w-[210px] items-center justify-start rounded-[10px] border border-[#4d6f99]/70 bg-[linear-gradient(135deg,#052033_0%,#0b3b34_100%)] px-4 text-[17px] font-semibold tracking-[0.02em] text-[#f1f6fc] transition-colors duration-200 hover:bg-[linear-gradient(135deg,#06283f_0%,#0f4a41_100%)]';
@@ -13,19 +14,51 @@ export default function LoginCard() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [validationErrorKey, setValidationErrorKey] = useState(null);
   const loading = status === 'loading';
-  const canContinue = email.trim().length > 0 && password.trim().length > 0 && !loading;
+  const canContinue = !loading;
+  const activeErrorKey = validationErrorKey || error;
+  const errorMessage = useMemo(
+    () => (activeErrorKey ? t.errors?.[activeErrorKey] ?? t.errors.unexpectedError : null),
+    [activeErrorKey, t.errors],
+  );
+
+  const resetErrorState = () => {
+    if (validationErrorKey) {
+      setValidationErrorKey(null);
+    }
+    if (error) {
+      dispatch(clearAuthError());
+    }
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!canContinue) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
+      setValidationErrorKey('emailRequired');
       return;
     }
-    dispatch(loginUser({ email: email.trim(), password, remember: true }));
+
+    if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
+      setValidationErrorKey('invalidEmail');
+      return;
+    }
+
+    if (!password.trim()) {
+      setValidationErrorKey('passwordRequired');
+      return;
+    }
+
+    setValidationErrorKey(null);
+    dispatch(loginUser({ email: normalizedEmail, password, remember: true }));
   };
 
   return (
     <section className={`w-full max-w-[470px] px-[24px] py-[10px] ${isRTL ? 'mr-[14px]' : 'ml-[14px]'}`}>
+      <AuthErrorAlert message={errorMessage} isRTL={isRTL} />
+
       <h1 className={`text-[54px] font-medium tracking-[0.05em] leading-[58px] text-[#f0f3f6] ${isRTL ? 'text-right' : 'text-left'}`}>
         {t.loginTitle}
       </h1>
@@ -33,11 +66,14 @@ export default function LoginCard() {
         {t.loginSubtitle}
       </p>
 
-      <form onSubmit={handleSubmit} className={`mt-[28px] w-full max-w-[400px] ${isRTL ? 'text-right' : 'text-left'}`}>
+      <form noValidate onSubmit={handleSubmit} className={`mt-[28px] w-full max-w-[400px] ${isRTL ? 'text-right' : 'text-left'}`}>
         <input
           type="email"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            resetErrorState();
+            setEmail(event.target.value);
+          }}
           placeholder={t.emailPlaceholder}
           className="h-[54px] w-full rounded-[10px] border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[18px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
         />
@@ -46,7 +82,10 @@ export default function LoginCard() {
           <input
             type={showPassword ? 'text' : 'password'}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              resetErrorState();
+              setPassword(event.target.value);
+            }}
             placeholder={t.passwordPlaceholder}
             className="h-[54px] w-full rounded-[10px] border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 pr-16 text-[18px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
           />
@@ -66,8 +105,6 @@ export default function LoginCard() {
         >
           {loading ? t.loading : t.login}
         </button>
-
-        {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
 
         <div className="hidden mt-8 items-center gap-6">
           <span className="h-px flex-1 bg-white/20" />

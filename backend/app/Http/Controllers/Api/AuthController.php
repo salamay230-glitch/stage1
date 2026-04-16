@@ -8,10 +8,16 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private const LOGIN_MAX_ATTEMPTS = 5;
+
+    private const LOGIN_DECAY_SECONDS = 60;
+
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -20,14 +26,25 @@ class AuthController extends Controller
             'remember' => ['sometimes', 'boolean'],
         ]);
 
+        $throttleKey = $this->loginThrottleKey($request, $validated['email']);
+        if (RateLimiter::tooManyAttempts($throttleKey, self::LOGIN_MAX_ATTEMPTS)) {
+            return response()->json([
+                'message' => 'Too many login attempts. Please try again in a minute.',
+            ], 429);
+        }
+
         /** @var User|null $user */
         $user = User::query()->where('email', $validated['email'])->first();
 
         if ($user === null || ! Hash::check($validated['password'], $user->password)) {
+            RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
+
             throw ValidationException::withMessages([
-                'email' => [__('auth.failed')],
+                'email' => ['Invalid credentials'],
             ]);
         }
+
+        RateLimiter::clear($throttleKey);
 
         $remember = (bool) ($validated['remember'] ?? false);
         $expiresAt = $remember
@@ -52,5 +69,10 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    private function loginThrottleKey(Request $request, string $email): string
+    {
+        return Str::lower($email).'|'.$request->ip();
     }
 }
