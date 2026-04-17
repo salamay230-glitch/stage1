@@ -1,10 +1,10 @@
 /** @param {string | undefined} role */
 export function resolveRoleHomePath(role) {
   if (role === 'admin') {
-    return '/administration';
+    return '/admin/dashboard';
   }
   if (role === 'collaborateur') {
-    return '/collaboration';
+    return '/employee/missions';
   }
   return '/login';
 }

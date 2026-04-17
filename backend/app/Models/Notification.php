@@ -12,7 +12,7 @@ class Notification extends Model
 
     protected $fillable = [
         'message',
-        'user_id',
+        'employee_id',
         'is_read',
     ];
 
@@ -23,8 +23,8 @@ class Notification extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Employee::class);
     }
 }

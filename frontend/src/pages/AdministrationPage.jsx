@@ -16,6 +16,15 @@ const NAV_ITEMS = [
 
 const inputLikeActionClass =
   'flex min-h-[52px] w-full max-w-xs items-center justify-center rounded-[10px] border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[17px] font-semibold tracking-[0.02em] text-[#f1f6fc] outline-none transition-colors duration-200 hover:border-[#6d8fb7] hover:bg-[#12314c]/45 focus-visible:ring-1 focus-visible:ring-emerald-400/35';
+const rowActionClass =
+  'inline-flex min-h-[44px] items-center justify-center rounded-[10px] border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[17px] font-semibold tracking-[0.02em] text-[#f1f6fc] transition-colors duration-200 hover:border-[#6d8fb7] hover:bg-[#12314c]/45';
+
+const emptyEmployeeForm = {
+  nom: '',
+  prenom: '',
+  email: '',
+  password: '',
+};
 
 function StatTile({ label, value, isRTL }) {
   return (
@@ -42,6 +51,15 @@ export default function AdministrationPage() {
   });
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [employeesError, setEmployeesError] = useState(false);
+  const [employeesSaving, setEmployeesSaving] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEmployeeId, setEditingEmployeeId] = useState(null);
+  const [employeeForm, setEmployeeForm] = useState(emptyEmployeeForm);
+  const [showEmployeePassword, setShowEmployeePassword] = useState(false);
+  const [employeeStatus, setEmployeeStatus] = useState(null);
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
@@ -61,11 +79,107 @@ export default function AdministrationPage() {
     }
   }, []);
 
+  const loadEmployees = useCallback(async () => {
+    setEmployeesLoading(true);
+    setEmployeesError(false);
+    try {
+      const { data } = await api.get('/admin/employees');
+      setEmployees(Array.isArray(data?.employees) ? data.employees : []);
+    } catch {
+      setEmployeesError(true);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeNav === 'dashboard') {
       void loadStats();
     }
-  }, [activeNav, loadStats]);
+    if (activeNav === 'users') {
+      void loadEmployees();
+    }
+  }, [activeNav, loadStats, loadEmployees]);
+
+  const openAddModal = () => {
+    setEmployeeStatus(null);
+    setEditingEmployeeId(null);
+    setEmployeeForm(emptyEmployeeForm);
+    setShowEmployeePassword(false);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (employee) => {
+    setEmployeeStatus(null);
+    setEditingEmployeeId(employee.id);
+    setEmployeeForm({
+      nom: employee.nom ?? '',
+      prenom: employee.prenom ?? '',
+      email: employee.email ?? '',
+      password: '',
+    });
+    setShowEmployeePassword(false);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingEmployeeId(null);
+    setEmployeeForm(emptyEmployeeForm);
+    setShowEmployeePassword(false);
+  };
+
+  const handleSaveEmployee = async (event) => {
+    event.preventDefault();
+    setEmployeesSaving(true);
+    setEmployeesError(false);
+    setEmployeeStatus(null);
+
+    try {
+      const payload = {
+        nom: employeeForm.nom.trim(),
+        prenom: employeeForm.prenom.trim(),
+        email: employeeForm.email.trim(),
+      };
+
+      if (!editingEmployeeId || employeeForm.password.trim()) {
+        payload.password = employeeForm.password;
+      }
+
+      if (editingEmployeeId) {
+        await api.put(`/admin/employees/${editingEmployeeId}`, payload);
+        setEmployeeStatus({ type: 'success', text: t.employeeUpdatedSuccess });
+      } else {
+        await api.post('/admin/employees', payload);
+        setEmployeeStatus({ type: 'success', text: t.employeeAddedSuccess });
+      }
+
+      await loadEmployees();
+      closeModal();
+    } catch {
+      setEmployeesError(true);
+      setEmployeeStatus({ type: 'error', text: t.employeeActionFailed });
+    } finally {
+      setEmployeesSaving(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId) => {
+    const confirmed = window.confirm(t.confirmDeleteEmployee);
+    if (!confirmed) {
+      return;
+    }
+    setEmployeesError(false);
+    setEmployeeStatus(null);
+    try {
+      await api.delete(`/admin/employees/${employeeId}`);
+      await loadEmployees();
+      setEmployeeStatus({ type: 'success', text: t.employeeDeletedSuccess });
+    } catch {
+      setEmployeesError(true);
+      setEmployeeStatus({ type: 'error', text: t.employeeActionFailed });
+    }
+  };
 
   const shell = (
     <div className="relative min-h-screen overflow-hidden bg-[#031726]">
@@ -174,7 +288,17 @@ export default function AdministrationPage() {
             )}
 
             {activeNav === 'users' && (
-              <PlaceholderSection title={t.adminNavUsers} body={t.adminSectionUsersHint} isRTL={isRTL} />
+              <ManageEmployeesSection
+                t={t}
+                isRTL={isRTL}
+                employees={employees}
+                loading={employeesLoading}
+                error={employeesError}
+                status={employeeStatus}
+                onAdd={openAddModal}
+                onEdit={openEditModal}
+                onDelete={handleDeleteEmployee}
+              />
             )}
             {activeNav === 'missions' && (
               <PlaceholderSection title={t.adminNavMissions} body={t.adminSectionMissionsHint} isRTL={isRTL} />
@@ -186,11 +310,183 @@ export default function AdministrationPage() {
         </div>
 
         <LanguageSwitcher />
+        {modalOpen ? (
+          <EmployeeModal
+            t={t}
+            isRTL={isRTL}
+            form={employeeForm}
+            setForm={setEmployeeForm}
+            onClose={closeModal}
+            onSubmit={handleSaveEmployee}
+            saving={employeesSaving}
+            editing={Boolean(editingEmployeeId)}
+            showPassword={showEmployeePassword}
+            setShowPassword={setShowEmployeePassword}
+          />
+        ) : null}
       </div>
     </div>
   );
 
   return shell;
+}
+
+function ManageEmployeesSection({
+  t,
+  isRTL,
+  employees,
+  loading,
+  error,
+  status,
+  onAdd,
+  onEdit,
+  onDelete,
+}) {
+  return (
+    <section className={`border-b border-[#4d6f99]/20 pb-8 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      <h1 className="text-[36px] font-medium leading-[40px] tracking-[0.05em] text-[#f0f3f6] md:text-[42px] md:leading-[46px]">
+        {t.manageEmployees}
+      </h1>
+
+      <div className="mt-6 border-y border-[#4d6f99]/30">
+        <div
+          className={`grid grid-cols-[1.2fr_1.2fr_1.6fr_auto] gap-3 px-2 py-3 text-[14px] font-medium leading-[20px] text-[#d7e2ef] ${
+            isRTL ? 'text-right' : 'text-left'
+          }`}
+        >
+          <span>{t.employeeName}</span>
+          <span>{t.employeeSurname}</span>
+          <span>{t.employeeEmail}</span>
+          <span>{t.employeeActions}</span>
+        </div>
+
+        {loading ? (
+          <p className="px-2 py-5 text-[14px] font-medium leading-[20px] text-[#d7e2ef]">{t.loading}</p>
+        ) : employees.length === 0 ? (
+          <p className="px-2 py-5 text-[14px] font-medium leading-[20px] text-[#d7e2ef]">{t.employeesEmpty}</p>
+        ) : (
+          employees.map((employee) => (
+            <div
+              key={employee.id}
+              className={`grid grid-cols-[1.2fr_1.2fr_1.6fr_auto] items-center gap-3 border-t border-[#4d6f99]/20 px-2 py-3 text-[14px] font-medium leading-[20px] text-[#d7e2ef] ${
+                isRTL ? 'text-right' : 'text-left'
+              }`}
+            >
+              <span>{employee.nom}</span>
+              <span>{employee.prenom}</span>
+              <span className="truncate">{employee.email}</span>
+              <div className={`flex gap-2 ${isRTL ? 'justify-end' : 'justify-start'}`}>
+                <button type="button" className={rowActionClass} onClick={() => onEdit(employee)}>
+                  {t.editEmployee}
+                </button>
+                <button type="button" className={rowActionClass} onClick={() => onDelete(employee.id)}>
+                  {t.deleteEmployee}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {status ? (
+        <p
+          className={`mt-3 text-[14px] font-medium leading-[20px] ${
+            status.type === 'error' ? 'text-amber-300/90' : 'text-emerald-300'
+          } ${isRTL ? 'text-right' : 'text-left'}`}
+        >
+          {status.text}
+        </p>
+      ) : null}
+
+      {error ? (
+        <p className={`mt-3 text-[14px] font-medium leading-[20px] text-amber-300/90 ${isRTL ? 'text-right' : 'text-left'}`}>
+          {t.employeeActionFailed}
+        </p>
+      ) : null}
+
+      <button type="button" className={`${inputLikeActionClass} mt-5 max-w-[260px]`} onClick={onAdd}>
+        {t.addEmployee}
+      </button>
+    </section>
+  );
+}
+
+function EmployeeModal({
+  t,
+  isRTL,
+  form,
+  setForm,
+  onClose,
+  onSubmit,
+  saving,
+  editing,
+  showPassword,
+  setShowPassword,
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#031726]/80 px-4">
+      <div className={`w-full max-w-[520px] border border-[#4d6f99]/45 bg-[#0b2740] p-5 ${isRTL ? 'text-right' : 'text-left'}`}>
+        <h2 className="text-[24px] font-medium tracking-[0.04em] text-[#f0f3f6]">
+          {editing ? t.editEmployee : t.addEmployee}
+        </h2>
+
+        <form onSubmit={onSubmit} className="mt-5 space-y-3">
+          <input
+            type="text"
+            value={form.nom}
+            onChange={(event) => setForm((prev) => ({ ...prev, nom: event.target.value }))}
+            placeholder={t.employeeName}
+            required
+            className="h-[52px] w-full border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[17px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
+          />
+          <input
+            type="text"
+            value={form.prenom}
+            onChange={(event) => setForm((prev) => ({ ...prev, prenom: event.target.value }))}
+            placeholder={t.employeeSurname}
+            required
+            className="h-[52px] w-full border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[17px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
+          />
+          <input
+            type="email"
+            value={form.email}
+            onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+            placeholder={t.employeeEmail}
+            required
+            className="h-[52px] w-full border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[17px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
+          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={form.password}
+              onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+              placeholder={editing ? t.passwordOptional : t.passwordPlaceholder}
+              required={!editing}
+              className="h-[52px] w-full border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 pr-16 text-[17px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className={`absolute top-1/2 -translate-y-1/2 text-xs font-medium text-[#cddbed] transition-colors hover:text-white ${
+                isRTL ? 'left-3' : 'right-3'
+              }`}
+            >
+              {showPassword ? t.hide : t.show}
+            </button>
+          </div>
+
+          <div className={`flex gap-3 pt-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
+            <button type="button" onClick={onClose} className={`${rowActionClass} min-w-[120px]`}>
+              {t.cancel}
+            </button>
+            <button type="submit" disabled={saving} className={`${rowActionClass} min-w-[160px]`}>
+              {saving ? t.loading : t.saveEmployee}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function PlaceholderSection({ title, body, isRTL, tall = false }) {

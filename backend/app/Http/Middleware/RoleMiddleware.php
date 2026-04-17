@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Chef;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,7 +20,9 @@ class RoleMiddleware
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if (! in_array($user->role, $roles, true)) {
+        $resolvedRole = $user instanceof Chef ? 'admin' : 'collaborateur';
+
+        if (! in_array($resolvedRole, $roles, true)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

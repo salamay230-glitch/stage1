@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Chef;
+use App\Models\Employee;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -18,21 +19,22 @@ class DatabaseSeeder extends Seeder
     {
         $password = Hash::make('password123');
 
-        User::query()->updateOrCreate(
+        $chef = Chef::query()->updateOrCreate(
             ['email' => 'admin@ocp.ma'],
             [
-                'name' => 'Administrateur OCP',
+                'nom' => 'Administrateur',
+                'prenom' => 'OCP',
                 'password' => $password,
-                'role' => User::ROLE_ADMIN,
             ],
         );
 
-        User::query()->updateOrCreate(
+        Employee::query()->updateOrCreate(
             ['email' => 'collaborateur@ocp.ma'],
             [
-                'name' => 'Collaborateur OCP',
+                'nom' => 'Collaborateur',
+                'prenom' => 'OCP',
                 'password' => $password,
-                'role' => User::ROLE_COLLABORATEUR,
+                'chef_id' => $chef->id,
             ],
         );
     }

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
-use App\Models\User;
+use App\Models\Chef;
+use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -33,8 +35,11 @@ class AuthController extends Controller
             ], 429);
         }
 
-        /** @var User|null $user */
-        $user = User::query()->where('email', $validated['email'])->first();
+        /** @var AuthenticatableUser|null $user */
+        $user = Chef::query()->where('email', $validated['email'])->first();
+        if ($user === null) {
+            $user = Employee::query()->where('email', $validated['email'])->first();
+        }
 
         if ($user === null || ! Hash::check($validated['password'], $user->password)) {
             RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);

@@ -24,7 +24,7 @@ class Mission extends Model
         'start_date',
         'end_date',
         'status',
-        'user_id',
+        'employee_id',
     ];
 
     protected function casts(): array
@@ -37,8 +37,8 @@ class Mission extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Employee::class);
     }
 }

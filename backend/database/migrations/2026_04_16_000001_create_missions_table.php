@@ -17,11 +17,11 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date');
             $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending');
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
             $table->timestamps();
 
             $table->index('status');
-            $table->index(['user_id', 'status']);
+            $table->index(['employee_id', 'status']);
             $table->index(['start_date', 'end_date']);
         });
     }

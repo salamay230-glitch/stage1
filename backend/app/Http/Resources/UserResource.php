@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Chef;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\User */
 class UserResource extends JsonResource
 {
     /**
@@ -13,11 +14,14 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $nomComplet = trim(($this->prenom ?? '').' '.($this->nom ?? ''));
+        $role = $this->resource instanceof Chef ? 'admin' : 'collaborateur';
+
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => $nomComplet,
             'email' => $this->email,
-            'role' => $this->role,
+            'role' => $role,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

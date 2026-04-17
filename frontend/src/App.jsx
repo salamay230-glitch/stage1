@@ -26,7 +26,23 @@ export default function App() {
             }
           />
           <Route
+            path="/admin/dashboard"
+            element={
+              <RoleGuard allow={['admin']}>
+                <AdministrationPage />
+              </RoleGuard>
+            }
+          />
+          <Route
             path="/collaboration"
+            element={
+              <RoleGuard allow={['collaborateur']}>
+                <CollaborationPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/employee/missions"
             element={
               <RoleGuard allow={['collaborateur']}>
                 <CollaborationPage />
