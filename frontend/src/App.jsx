@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import AdministrationPage from './pages/AdministrationPage';
+import AdministrationPage from './pages/AdministrationPagePro';
 import CollaborationPage from './pages/CollaborationPage';
 import LoginPage from './pages/LoginPage';
 import GuestRoute from './routes/GuestRoute';
