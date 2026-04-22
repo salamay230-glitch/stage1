@@ -106,6 +106,7 @@ export default function AdministrationPagePro() {
   const { t } = useLocale();
   const user = useSelector((s) => s.auth.user);
   const headerNavRef = useRef(null);
+  const missionMapSectionRef = useRef(null);
   const [section, setSection] = useState('missions');
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -178,10 +179,10 @@ export default function AdministrationPagePro() {
     if (s.status === 'fulfilled') {
       const d = s.value.data ?? {};
       setStats({
-        total_missions: d.total_missions ?? 0,
-        ongoing_missions: d.ongoing_missions ?? 0,
-        completed_missions: d.completed_missions ?? 0,
-        not_started_missions: d.not_started_missions ?? d.delayed_missions ?? 0,
+        total_missions: Number(d.total_missions) || 0,
+        ongoing_missions: Number(d.ongoing_missions) || 0,
+        completed_missions: Number(d.completed_missions) || 0,
+        not_started_missions: Number(d.not_started_missions ?? d.delayed_missions) || 0,
       });
     }
     if (e.status === 'fulfilled') setEmployees(e.value.data?.employees ?? []);
@@ -452,11 +453,11 @@ export default function AdministrationPagePro() {
             <section className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <StatTile variant="total" label={t.responsableStatsTotal} value={stats.total_missions ?? 0} />
+                <StatTile variant="notStarted" label={t.responsableStatsNotStarted} value={stats.not_started_missions ?? 0} />
                 <StatTile variant="ongoing" label={t.responsableStatsOngoing} value={stats.ongoing_missions ?? 0} />
                 <StatTile variant="completed" label={t.responsableStatsCompleted} value={stats.completed_missions ?? 0} />
-                <StatTile variant="notStarted" label={t.responsableStatsNotStarted} value={stats.not_started_missions ?? 0} />
               </div>
-              <section className={`${glass} w-full border border-white/[0.08]`}>
+              <section ref={missionMapSectionRef} className={`${glass} w-full border border-white/[0.08]`}>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-left text-[24px] font-semibold tracking-[0.04em] text-[#f0f3f6]">{t.missionMapTitle}</h2>
                   <button type="button" className={btn} onClick={() => openMissionEditor(null)}>
@@ -501,23 +502,28 @@ export default function AdministrationPagePro() {
                       missions.map((m) => (
                         <div
                           key={m.id}
-                          className="grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,0.95fr)_auto] items-center gap-3 px-4 py-3.5 text-left text-[#d7e2ef] transition hover:bg-white/[0.03]"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openMissionDetailPanel(m)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openMissionDetailPanel(m);
+                            }
+                          }}
+                          className="grid cursor-pointer grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,0.95fr)_auto] items-center gap-3 px-4 py-3.5 text-left text-[#d7e2ef] outline-none transition hover:bg-white/[0.055] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_6px_22px_-10px_rgba(0,0,0,0.35)] focus-visible:ring-2 focus-visible:ring-[#4f95ff]/40"
                         >
-                          <button
-                            type="button"
-                            className="min-w-0 cursor-pointer rounded-[8px] text-left outline-none ring-[#4f95ff]/0 transition hover:bg-white/[0.04] hover:ring-2 hover:ring-[#4f95ff]/25 focus-visible:ring-2 focus-visible:ring-[#4f95ff]/45"
-                            onClick={() => openMissionDetailPanel(m)}
-                          >
+                          <div className="min-w-0 pointer-events-none">
                             <p className="truncate text-[15px] font-semibold tracking-[0.02em] text-[#f0f3f6]">{m.title}</p>
                             <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-[#8aa3b8]">{m.description}</p>
-                          </button>
-                          <p className="truncate text-[14px] tracking-[0.01em]">
+                          </div>
+                          <p className="truncate text-[14px] tracking-[0.01em] pointer-events-none">
                             {`${m.employee?.prenom ?? ''} ${m.employee?.nom ?? ''}`.trim() || '—'}
                           </p>
-                          <div className="min-w-0">
+                          <div className="min-w-0 pointer-events-none">
                             <MissionStatusBadge status={m.status} t={t} />
                           </div>
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             <button type="button" className={btn} onClick={() => openMissionEditor(m)}>
                               {t.missionEdit}
                             </button>
@@ -602,59 +608,78 @@ export default function AdministrationPagePro() {
 
       {missionDetail ? (
         <div
-          className="fixed inset-0 z-[85] flex items-start justify-center overflow-y-auto bg-[#031726]/72 px-4 py-10 backdrop-blur-md"
+          className="ocp-mission-detail-backdrop fixed inset-0 z-[85] flex items-start justify-center overflow-y-auto bg-[#020a12]/80 px-4 py-8 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="mission-detail-title"
           onClick={() => setMissionDetail(null)}
         >
           <div
-            className="ocp-glass-heavy ocp-glass-modal relative mt-2 w-full max-w-[560px] rounded-[16px] border border-white/[0.12] p-6 shadow-[0_28px_64px_-16px_rgba(0,0,0,0.62)]"
+            className="ocp-mission-detail-panel ocp-glass-heavy ocp-glass-modal font-ocp not-italic relative mt-2 w-full max-w-[600px] rounded-[18px] border border-white/[0.1] p-7 shadow-[0_32px_72px_-20px_rgba(0,0,0,0.65)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <p id="mission-detail-title" className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8aa3b8]">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.08] pb-5">
+              <div className="min-w-0 flex-1 text-left">
+                <p id="mission-detail-title" className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8aa3b8]">
                   {t.missionDetailHeading}
                 </p>
-                <h2 className="mt-1 text-left text-[22px] font-semibold leading-snug tracking-[0.03em] text-white">{missionDetail.title}</h2>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <h2 className="text-left text-[24px] font-semibold leading-tight tracking-[0.02em] text-white">{missionDetail.title}</h2>
+                  <MissionStatusBadge status={missionDetail.status} t={t} />
+                </div>
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-[8px] border border-white/10 bg-white/[0.04] px-3 py-1.5 text-left text-[13px] font-semibold text-[#e8eff7] transition hover:bg-white/[0.08]"
+                className="shrink-0 rounded-[10px] border border-white/12 bg-white/[0.05] px-3.5 py-2 text-left text-[13px] font-semibold text-[#e8eff7] transition hover:bg-white/[0.1]"
                 onClick={() => setMissionDetail(null)}
               >
                 {t.missionCloseDetail}
               </button>
             </div>
-            <p className="text-left text-[15px] leading-relaxed text-[#d7e2ef]">{missionDetail.description || '—'}</p>
-            <dl className="mt-5 space-y-3 text-left text-[14px]">
-              <div className="flex flex-col gap-0.5 border-b border-white/[0.06] pb-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionDeadline}</dt>
-                <dd className="font-medium text-[#f0f3f6]">{formatDateOnly(missionDetail.end_date)}</dd>
-              </div>
-              <div className="flex flex-col gap-0.5 border-b border-white/[0.06] pb-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionAssignedTo}</dt>
-                <dd className="font-medium text-[#f0f3f6]">
+
+            <section className="mt-5 text-left">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionDetailDescriptionLabel}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-[#d7e2ef]">{missionDetail.description?.trim() || '—'}</p>
+            </section>
+
+            <dl className="mt-6 space-y-4 border-t border-white/[0.06] pt-6 text-left text-[14px]">
+              <div className="flex flex-col gap-1">
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionDetailAssigneeLabel}</dt>
+                <dd className="text-[16px] font-medium text-[#f0f3f6]">
                   {`${missionDetail.employee?.prenom ?? ''} ${missionDetail.employee?.nom ?? ''}`.trim() || '—'}
                 </dd>
               </div>
-              <div className="flex flex-col gap-0.5 border-b border-white/[0.06] pb-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionLocation}</dt>
-                <dd className="font-medium text-[#f0f3f6]">
+              <div className="flex flex-col gap-1">
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionDeadline}</dt>
+                <dd className="text-[16px] font-medium text-[#f0f3f6]">{formatDateOnly(missionDetail.end_date)}</dd>
+              </div>
+            </dl>
+
+            <section className="mt-6 text-left">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionDetailLocationPreview}</h3>
+              <div className="mt-2 space-y-3">
+                <MissionDetailStaticMap lat={missionDetail.latitude} lng={missionDetail.longitude} status={missionDetail.status} />
+                <p className="text-[13px] text-[#9fb4cb]">
                   {missionDetail.latitude != null && missionDetail.longitude != null
                     ? `${Number(missionDetail.latitude).toFixed(5)}, ${Number(missionDetail.longitude).toFixed(5)}`
                     : '—'}
-                </dd>
+                </p>
+                <button
+                  type="button"
+                  className={`${btn} w-full max-w-xs border-[#4f95ff]/40 text-[#cfe8ff]`}
+                  onClick={() => {
+                    setMissionDetail(null);
+                    window.requestAnimationFrame(() => {
+                      missionMapSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                  }}
+                >
+                  {t.missionViewOnMainMap}
+                </button>
               </div>
-              <div className="flex flex-col gap-1">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{t.missionStatus}</dt>
-                <dd>
-                  <MissionStatusBadge status={missionDetail.status} t={t} />
-                </dd>
-              </div>
-            </dl>
-            <div className="mt-6 flex flex-wrap gap-2">
+            </section>
+
+            <div className="mt-8 flex flex-wrap gap-2 border-t border-white/[0.06] pt-6">
               <button type="button" className={btn} onClick={() => openMissionEditor(missionDetail)}>
                 {t.missionEditFromDetail}
               </button>
@@ -869,6 +894,34 @@ export default function AdministrationPagePro() {
   );
 }
 
+function MissionDetailStaticMap({ lat, lng, status }) {
+  const latN = Number(lat);
+  const lngN = Number(lng);
+  if (lat == null || lng == null || Number.isNaN(latN) || Number.isNaN(lngN)) {
+    return <p className="text-left text-[14px] text-[#9fb4cb]">—</p>;
+  }
+  const position = [latN, lngN];
+  return (
+    <div className="h-[200px] w-full overflow-hidden rounded-[12px] border border-white/[0.1] bg-[#031726]">
+      <MapContainer
+        key={`detail-map-${latN}-${lngN}`}
+        center={position}
+        zoom={11}
+        zoomControl={false}
+        scrollWheelZoom={false}
+        dragging={false}
+        doubleClickZoom={false}
+        attributionControl={false}
+        className="z-0 h-full w-full font-ocp not-italic"
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer attribution="&copy; OpenStreetMap & CARTO" url={CARTO_DARK} />
+        <Marker position={position} icon={markerIcon(status)} />
+      </MapContainer>
+    </div>
+  );
+}
+
 function MapPlacePicker({ enabled, onPick }) {
   useMapEvents({
     click(event) {
@@ -919,16 +972,31 @@ function MissionMapPopupBody({ mission, t, onViewFullDetails }) {
 }
 
 function StatTile({ label, value, variant }) {
-  const shell = {
-    total: 'border-[#4d6f99]/40 bg-[#061f33]/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
-    ongoing: 'border-[#0ea5e9]/38 bg-gradient-to-br from-[#062238]/95 to-[#061f33]/45 shadow-[inset_0_0_0_1px_rgba(14,165,233,0.14)]',
-    completed: 'border-[#10b981]/38 bg-gradient-to-br from-[#052a22]/90 to-[#061f33]/45 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.14)]',
-    notStarted: 'border-[#d4a574]/42 bg-gradient-to-br from-[#2a2419]/65 to-[#061f33]/38 shadow-[inset_0_0_0_1px_rgba(212,165,116,0.2)]',
-  }[variant] ?? 'border-[#4d6f99]/35 bg-transparent';
+  const accent =
+    variant === 'total'
+      ? 'bg-[#94a3b8] shadow-[0_0_14px_-2px_rgba(148,163,184,0.45)]'
+      : variant === 'notStarted'
+        ? 'bg-[#c4a574] shadow-[0_0_14px_-2px_rgba(196,165,116,0.45)]'
+        : variant === 'ongoing'
+          ? 'bg-[#0ea5e9] shadow-[0_0_16px_-2px_rgba(14,165,233,0.5)]'
+          : 'bg-[#10b981] shadow-[0_0_16px_-2px_rgba(16,185,129,0.45)]';
+  const hoverGlow =
+    variant === 'total'
+      ? 'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_32px_-12px_rgba(148,163,184,0.18)]'
+      : variant === 'notStarted'
+        ? 'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_32px_-12px_rgba(196,165,116,0.2)]'
+        : variant === 'ongoing'
+          ? 'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_32px_-12px_rgba(14,165,233,0.22)]'
+          : 'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_32px_-12px_rgba(16,185,129,0.2)]';
   return (
-    <div className={`rounded-[12px] border px-5 py-4 text-left ${shell}`}>
-      <span className="text-[14px] font-medium text-[#d7e2ef]">{label}</span>
-      <p className="text-[30px] font-semibold tabular-nums text-[#f0f3f6]">{value}</p>
+    <div
+      className={`relative flex min-h-[132px] flex-col overflow-hidden rounded-[12px] border border-[#2a4a6a]/55 bg-[#030d15]/92 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm transition ${hoverGlow}`}
+    >
+      <div className={`absolute left-0 top-0 h-full w-[3px] ${accent}`} aria-hidden />
+      <div className="flex min-h-[132px] flex-1 flex-col px-5 pb-4 pt-3.5 pl-[22px]">
+        <span className="text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-[#8aa3b8]">{label}</span>
+        <p className="mt-auto pt-4 text-left text-[34px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-[#f0f3f6]">{value}</p>
+      </div>
     </div>
   );
 }

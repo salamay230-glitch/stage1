@@ -174,6 +174,34 @@ body {
   animation: ocp-toast-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes ocp-mission-detail-backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ocp-mission-detail-panel {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ocp-mission-detail-backdrop {
+  animation: ocp-mission-detail-backdrop 0.22s ease-out forwards;
+}
+
+.ocp-mission-detail-panel {
+  animation: ocp-mission-detail-panel 0.34s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .leaflet-container .leaflet-popup-content-wrapper {
   padding: 0;
   overflow: hidden;
