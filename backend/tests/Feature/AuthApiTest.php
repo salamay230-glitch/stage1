@@ -123,7 +123,7 @@ class AuthApiTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_admin_route_forbidden_for_collaborateur(): void
+    public function test_responsable_route_forbidden_for_collaborateur(): void
     {
         $chef = Chef::query()->create([
             'nom' => 'Chef',
@@ -142,11 +142,11 @@ class AuthApiTest extends TestCase
         $token = $user->createToken('api')->plainTextToken;
 
         $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/api/admin/mission-stats')
+            ->getJson('/api/responsable/mission-stats')
             ->assertForbidden();
     }
 
-    public function test_admin_route_allowed_for_admin(): void
+    public function test_responsable_route_allowed_for_responsable(): void
     {
         $user = Chef::query()->create([
             'nom' => 'Chef',
@@ -157,13 +157,13 @@ class AuthApiTest extends TestCase
         $token = $user->createToken('api')->plainTextToken;
 
         $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/api/admin/mission-stats')
+            ->getJson('/api/responsable/mission-stats')
             ->assertOk()
             ->assertJsonStructure([
                 'total_missions',
                 'ongoing_missions',
                 'completed_missions',
-                'delayed_missions',
+                'not_started_missions',
             ]);
     }
 }

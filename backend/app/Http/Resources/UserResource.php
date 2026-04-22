@@ -15,7 +15,7 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         $nomComplet = trim(($this->prenom ?? '').' '.($this->nom ?? ''));
-        $role = $this->resource instanceof Chef ? 'admin' : 'collaborateur';
+        $role = $this->resource instanceof Chef ? 'responsable' : 'collaborateur';
 
         return [
             'id' => $this->id,

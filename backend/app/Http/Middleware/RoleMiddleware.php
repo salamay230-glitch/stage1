@@ -20,7 +20,7 @@ class RoleMiddleware
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $resolvedRole = $user instanceof Chef ? 'admin' : 'collaborateur';
+        $resolvedRole = $user instanceof Chef ? 'responsable' : 'collaborateur';
 
         if (! in_array($resolvedRole, $roles, true)) {
             return response()->json(['message' => 'Forbidden.'], 403);

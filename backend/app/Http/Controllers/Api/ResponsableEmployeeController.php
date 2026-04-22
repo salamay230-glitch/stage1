@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class AdminEmployeeController extends Controller
+class ResponsableEmployeeController extends Controller
 {
     public function index(Request $request): JsonResponse
     {

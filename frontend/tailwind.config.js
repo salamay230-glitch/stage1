@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        ocp: ['Cormorant Garamond', 'Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         axys: {
           bg: '#0a0a0a',

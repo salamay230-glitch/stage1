@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class AdminMissionController extends Controller
+class ResponsableMissionController extends Controller
 {
     public function index(Request $request): JsonResponse
     {

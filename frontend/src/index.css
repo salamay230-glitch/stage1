@@ -62,6 +62,33 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
+.ocp-glass-heavy {
+  background: rgba(11, 39, 64, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ocp-glass-modal {
+  background: rgba(8, 32, 56, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@keyframes ocp-notif-dot-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ocp-notif-dot-enter {
+  animation: ocp-notif-dot-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .ocp-nav-item-flat {
   transition:
     background 0.18s ease,
@@ -130,4 +157,40 @@ body {
 .ocp-menu-item:hover .ocp-menu-item-shine {
   transform: translateX(100%);
   opacity: 1;
+}
+
+@keyframes ocp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ocp-toast {
+  animation: ocp-toast-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.leaflet-container .leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 32, 56, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 22px 48px -12px rgba(0, 0, 0, 0.55);
+}
+
+.leaflet-container .leaflet-popup-content {
+  margin: 0;
+  min-width: 0;
+}
+
+.leaflet-container .leaflet-popup-tip {
+  background: rgba(8, 32, 56, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }

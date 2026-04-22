@@ -17,18 +17,12 @@ export default function App() {
         </Route>
         <Route element={<PrivateRoute />}>
           <Route path="/hello" element={<PostLoginRedirect />} />
+          <Route path="/administration" element={<Navigate to="/responsable/dashboard" replace />} />
+          <Route path="/admin/dashboard" element={<Navigate to="/responsable/dashboard" replace />} />
           <Route
-            path="/administration"
+            path="/responsable/dashboard"
             element={
-              <RoleGuard allow={['admin']}>
-                <AdministrationPage />
-              </RoleGuard>
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <RoleGuard allow={['admin']}>
+              <RoleGuard allow={['responsable']}>
                 <AdministrationPage />
               </RoleGuard>
             }

@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         $chef = Chef::query()->updateOrCreate(
             ['email' => 'admin@ocp.ma'],
             [
-                'nom' => 'Administrateur',
+                'nom' => 'Responsable mission',
                 'prenom' => 'OCP',
                 'password' => $password,
             ],

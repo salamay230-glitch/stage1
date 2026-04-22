@@ -7,9 +7,10 @@ import { resolveRoleHomePath } from '../utils/authPaths';
  */
 export default function RoleGuard({ allow, children }) {
   const user = useSelector((s) => s.auth.user);
-  const role = user?.role;
+  const role = user?.role === 'admin' ? 'responsable' : user?.role;
+  const allowed = allow.map((r) => (r === 'admin' ? 'responsable' : r));
 
-  if (!role || !allow.includes(role)) {
+  if (!role || !allowed.includes(role)) {
     return <Navigate to={resolveRoleHomePath(role)} replace />;
   }
 
