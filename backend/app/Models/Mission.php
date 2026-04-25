@@ -23,6 +23,7 @@ class Mission extends Model
         'longitude',
         'start_date',
         'end_date',
+        'overdue_notified_at',
         'status',
         'employee_id',
     ];
@@ -34,6 +35,7 @@ class Mission extends Model
             'longitude' => 'decimal:7',
             'start_date' => 'date',
             'end_date' => 'date',
+            'overdue_notified_at' => 'datetime',
         ];
     }
 

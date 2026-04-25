@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chefs', function (Blueprint $table) {
+        Schema::create('responsables', function (Blueprint $table) {
             $table->id();
             $table->string('nom');
             $table->string('prenom');
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('prenom');
             $table->string('email')->unique();
             $table->string('password');
-            $table->foreignId('chef_id')->constrained('chefs')->cascadeOnDelete();
+            $table->foreignId('responsable_id')->constrained('responsables')->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -37,6 +37,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('employees');
-        Schema::dropIfExists('chefs');
+        Schema::dropIfExists('responsables');
     }
 };

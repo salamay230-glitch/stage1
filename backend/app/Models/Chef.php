@@ -12,6 +12,16 @@ class Chef extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * Compatibility mapping while DB table is renamed.
+     */
+    protected $table = 'responsables';
+
+    /**
+     * Temporary compatibility: legacy model name using renamed table.
+     */
+ 
+
     protected $fillable = [
         'nom',
         'prenom',
@@ -33,6 +43,6 @@ class Chef extends Authenticatable
 
     public function employees(): HasMany
     {
-        return $this->hasMany(Employee::class);
+        return $this->hasMany(Employee::class, 'responsable_id');
     }
 }

@@ -38,14 +38,17 @@ class EmployeeMissionController extends Controller
             'status' => ['required', Rule::in([Mission::STATUS_IN_PROGRESS, Mission::STATUS_COMPLETED])],
         ]);
 
+        $previousStatus = $mission->status;
         $mission->status = $validated['status'];
         $mission->save();
 
-        Notification::query()->create([
-            'employee_id' => $employee->id,
-            'message' => 'Mission status updated: '.$mission->title.' ('.$mission->status.')',
-            'is_read' => false,
-        ]);
+        if ($previousStatus !== $mission->status) {
+            Notification::query()->create([
+                'employee_id' => $employee->id,
+                'message' => 'Le statut de la mission '.$mission->title.' a changé ('.$previousStatus.' -> '.$mission->status.').',
+                'is_read' => false,
+            ]);
+        }
 
         return response()->json(['mission' => $mission->fresh()]);
     }

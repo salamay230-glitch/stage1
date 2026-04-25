@@ -19,10 +19,10 @@ class ResponsableEmployeeController extends Controller
         }
 
         $employees = Employee::query()
-            ->where('chef_id', $chef->id)
+            ->where('responsable_id', $chef->id)
             ->orderBy('nom')
             ->orderBy('prenom')
-            ->get(['id', 'nom', 'prenom', 'email', 'chef_id', 'created_at', 'updated_at']);
+            ->get(['id', 'nom', 'prenom', 'email', 'responsable_id', 'created_at', 'updated_at']);
 
         return response()->json(['employees' => $employees]);
     }
@@ -46,7 +46,7 @@ class ResponsableEmployeeController extends Controller
             'prenom' => $validated['prenom'],
             'email' => $validated['email'],
             'password' => $validated['password'],
-            'chef_id' => $chef->id,
+            'responsable_id' => $chef->id,
         ]);
 
         return response()->json(['employee' => $employee], 201);
@@ -55,7 +55,7 @@ class ResponsableEmployeeController extends Controller
     public function update(Request $request, Employee $employee): JsonResponse
     {
         $chef = $this->resolveChef($request);
-        if ($chef === null || $employee->chef_id !== $chef->id) {
+        if ($chef === null || $employee->responsable_id !== $chef->id) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -80,7 +80,7 @@ class ResponsableEmployeeController extends Controller
     public function destroy(Request $request, Employee $employee): JsonResponse
     {
         $chef = $this->resolveChef($request);
-        if ($chef === null || $employee->chef_id !== $chef->id) {
+        if ($chef === null || $employee->responsable_id !== $chef->id) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

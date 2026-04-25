@@ -18,7 +18,7 @@ class Employee extends Authenticatable
         'prenom',
         'email',
         'password',
-        'chef_id',
+        'responsable_id',
     ];
 
     protected $hidden = [
@@ -33,9 +33,17 @@ class Employee extends Authenticatable
         ];
     }
 
+    public function responsable(): BelongsTo
+    {
+        return $this->belongsTo(Chef::class, 'responsable_id');
+    }
+
+    /**
+     * Backward-compatible alias used by existing code paths.
+     */
     public function chef(): BelongsTo
     {
-        return $this->belongsTo(Chef::class);
+        return $this->responsable();
     }
 
     public function missions(): HasMany

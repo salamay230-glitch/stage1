@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
                 'nom' => 'Collaborateur',
                 'prenom' => 'OCP',
                 'password' => $password,
-                'chef_id' => $chef->id,
+                'responsable_id' => $chef->id,
             ],
         );
     }

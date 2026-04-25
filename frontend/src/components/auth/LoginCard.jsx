@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clearAuthError, loginUser } from '../../features/auth/authSlice';
 import { useLocale } from '../../context/LocaleContext';
 import AuthErrorAlert from './AuthErrorAlert';
+import FormInput from '../common/FormInput';
 
 const buttonBaseClass =
   'flex h-[50px] w-[210px] items-center justify-start rounded-[10px] border border-[#4d6f99]/70 bg-[linear-gradient(135deg,#052033_0%,#0b3b34_100%)] px-4 text-[17px] font-semibold tracking-[0.02em] text-[#f1f6fc] transition-colors duration-200 hover:bg-[linear-gradient(135deg,#06283f_0%,#0f4a41_100%)]';
@@ -67,7 +68,8 @@ export default function LoginCard() {
       </p>
 
       <form noValidate onSubmit={handleSubmit} className={`mt-[28px] w-full max-w-[400px] ${isRTL ? 'text-right' : 'text-left'}`}>
-        <input
+        <FormInput
+          variant="login"
           type="email"
           value={email}
           onChange={(event) => {
@@ -75,11 +77,11 @@ export default function LoginCard() {
             setEmail(event.target.value);
           }}
           placeholder={t.emailPlaceholder}
-          className="h-[54px] w-full rounded-[10px] border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 text-[18px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
         />
 
         <div className="relative mt-4">
-          <input
+          <FormInput
+            variant="login"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(event) => {
@@ -87,7 +89,7 @@ export default function LoginCard() {
               setPassword(event.target.value);
             }}
             placeholder={t.passwordPlaceholder}
-            className="h-[54px] w-full rounded-[10px] border border-[#4d6f99]/70 bg-[#12314c]/30 px-4 pr-16 text-[18px] text-[#e8eff7] placeholder:text-[#9fb4cb] outline-none transition-colors duration-200 focus:border-[#6d8fb7]"
+            className="pr-16"
           />
           <button
             type="button"

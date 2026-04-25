@@ -21,8 +21,7 @@ class ResponsableMissionController extends Controller
         }
 
         $missions = Mission::query()
-            ->with(['employee:id,nom,prenom,email,chef_id'])
-            ->whereHas('employee', static fn ($query) => $query->where('chef_id', $chef->id))
+            ->with(['employee:id,nom,prenom,email,responsable_id'])
             ->orderByDesc('created_at')
             ->get();
 
@@ -36,7 +35,7 @@ class ResponsableMissionController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $validated = $this->validateMission($request, $chef);
+        $validated = $this->validateMissionForCreate($request, $chef);
 
         $mission = Mission::query()->create([
             'title' => $validated['title'],
@@ -45,8 +44,8 @@ class ResponsableMissionController extends Controller
             'longitude' => $validated['longitude'],
             'employee_id' => $validated['employee_id'],
             'status' => $validated['status'] ?? Mission::STATUS_PENDING,
-            'start_date' => $validated['start_date'] ?? now()->toDateString(),
-            'end_date' => $validated['end_date'] ?? now()->toDateString(),
+            'start_date' => now()->toDateString(),
+            'end_date' => $validated['end_date'],
         ]);
 
         Notification::query()->create([
@@ -56,7 +55,7 @@ class ResponsableMissionController extends Controller
         ]);
 
         return response()->json([
-            'mission' => $mission->load('employee:id,nom,prenom,email,chef_id'),
+            'mission' => $mission->load('employee:id,nom,prenom,email,responsable_id'),
         ], 201);
     }
 
@@ -67,8 +66,9 @@ class ResponsableMissionController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $validated = $this->validateMission($request, $chef);
+        $validated = $this->validateMissionForUpdate($request, $chef);
         $originalEmployeeId = $mission->employee_id;
+        $originalStatus = $mission->status;
 
         $mission->fill([
             'title' => $validated['title'],
@@ -96,8 +96,16 @@ class ResponsableMissionController extends Controller
             ]);
         }
 
+        if ($originalStatus !== $mission->status) {
+            Notification::query()->create([
+                'employee_id' => $mission->employee_id,
+                'message' => 'Le statut de la mission '.$mission->title.' a changé ('.$originalStatus.' -> '.$mission->status.').',
+                'is_read' => false,
+            ]);
+        }
+
         return response()->json([
-            'mission' => $mission->load('employee:id,nom,prenom,email,chef_id'),
+            'mission' => $mission->load('employee:id,nom,prenom,email,responsable_id'),
         ]);
     }
 
@@ -122,7 +130,7 @@ class ResponsableMissionController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validateMission(Request $request, Chef $chef): array
+    private function validateMissionForCreate(Request $request, Chef $chef): array
     {
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -132,11 +140,30 @@ class ResponsableMissionController extends Controller
             'employee_id' => [
                 'required',
                 'integer',
-                Rule::exists('employees', 'id')->where(static fn ($query) => $query->where('chef_id', $chef->id)),
+                Rule::exists('employees', 'id')->where(static fn ($query) => $query->where('responsable_id', $chef->id)),
             ],
             'status' => ['nullable', Rule::in([Mission::STATUS_PENDING, Mission::STATUS_IN_PROGRESS, Mission::STATUS_COMPLETED])],
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date'],
+            'end_date' => ['required', 'date', 'after:today'],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateMissionForUpdate(Request $request, Chef $chef): array
+    {
+        return $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'employee_id' => [
+                'required',
+                'integer',
+                Rule::exists('employees', 'id')->where(static fn ($query) => $query->where('responsable_id', $chef->id)),
+            ],
+            'status' => ['nullable', Rule::in([Mission::STATUS_PENDING, Mission::STATUS_IN_PROGRESS, Mission::STATUS_COMPLETED])],
+            'end_date' => ['nullable', 'date', 'after:today'],
         ]);
     }
 
@@ -144,7 +171,7 @@ class ResponsableMissionController extends Controller
     {
         return Employee::query()
             ->where('id', $mission->employee_id)
-            ->where('chef_id', $chef->id)
+            ->where('responsable_id', $chef->id)
             ->exists();
     }
 
